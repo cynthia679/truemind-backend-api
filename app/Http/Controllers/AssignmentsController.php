@@ -4,56 +4,67 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Assignment;
+use App\Models\Course;
 
 class AssignmentsController extends Controller
 {
-    public function index()
+    // List all assignments for a specific course
+    public function index(Course $course)
     {
-        // List all assignments with nested course and submissions
-        return response()->json(Assignment::with(['course', 'submissions'])->get());
+        return response()->json(
+            $course->assignments()->with('submissions')->get()
+        );
     }
 
-    public function store(Request $request)
+    // Store a new assignment under a specific course
+    public function store(Request $request, Course $course)
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'instructions' => 'nullable|string',
-            'course_id' => 'required|exists:courses,id',
             'due_date' => 'required|date',
         ]);
 
-        $assignment = Assignment::create($validated);
+        $assignment = $course->assignments()->create($validated);
 
-        // Return created assignment with nested relations
-        return response()->json($assignment->load(['course', 'submissions']), 201);
+        return response()->json($assignment->load('submissions'), 201);
     }
 
-    public function show($id)
+    // Show a single assignment under a course
+    public function show(Course $course, Assignment $assignment)
     {
-        // Show single assignment with nested relations
-        return response()->json(Assignment::with(['course', 'submissions'])->findOrFail($id));
+        if ($assignment->course_id !== $course->id) {
+            return response()->json(['message' => 'Assignment not found in this course'], 404);
+        }
+
+        return response()->json($assignment->load('submissions'));
     }
 
-    public function update(Request $request, $id)
+    // Update an assignment under a course
+    public function update(Request $request, Course $course, Assignment $assignment)
     {
-        $assignment = Assignment::findOrFail($id);
+        if ($assignment->course_id !== $course->id) {
+            return response()->json(['message' => 'Assignment not found in this course'], 404);
+        }
 
         $validated = $request->validate([
             'title' => 'sometimes|required|string|max:255',
             'instructions' => 'nullable|string',
-            'course_id' => 'sometimes|required|exists:courses,id',
             'due_date' => 'sometimes|required|date',
         ]);
 
         $assignment->update($validated);
 
-        // Return updated assignment with nested relations
-        return response()->json($assignment->load(['course', 'submissions']));
+        return response()->json($assignment->load('submissions'));
     }
 
-    public function destroy($id)
+    // Delete an assignment under a course
+    public function destroy(Course $course, Assignment $assignment)
     {
-        $assignment = Assignment::findOrFail($id);
+        if ($assignment->course_id !== $course->id) {
+            return response()->json(['message' => 'Assignment not found in this course'], 404);
+        }
+
         $assignment->delete();
 
         return response()->json(['message' => 'Assignment deleted successfully']);

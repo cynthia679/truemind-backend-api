@@ -4,56 +4,74 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Submission;
+use App\Models\Assignment;
+use Illuminate\Support\Facades\Auth;
 
 class SubmissionsController extends Controller
 {
-    public function index()
+    // List all submissions for a specific assignment
+    public function index(Assignment $assignment)
     {
-        // List all submissions with nested assignment and student
-        return response()->json(Submission::with(['assignment', 'student'])->get());
+        return response()->json(
+            $assignment->submissions()->with('student')->get()
+        );
     }
 
-    public function store(Request $request)
+    // Store a submission under a specific assignment (student only)
+    public function store(Request $request, Assignment $assignment)
     {
         $validated = $request->validate([
-            'assignment_id' => 'required|exists:assignments,id',
-            'student_id' => 'required|exists:users,id',
-            'content' => 'nullable|string',
-            'submitted_at' => 'nullable|date',
+            'content' => 'required|string',
         ]);
 
-        $submission = Submission::create($validated);
+        $validated['student_id'] = Auth::id();
 
-        // Return created submission with nested relations
-        return response()->json($submission->load(['assignment', 'student']), 201);
+        $submission = $assignment->submissions()->create($validated);
+
+        return response()->json($submission->load('student'), 201);
     }
 
-    public function show($id)
+    // Show a specific submission for a specific assignment
+    public function show(Assignment $assignment, Submission $submission)
     {
-        // Show single submission with nested relations
-        return response()->json(Submission::with(['assignment', 'student'])->findOrFail($id));
+        if ($submission->assignment_id !== $assignment->id) {
+            return response()->json(['message' => 'Submission not found in this assignment'], 404);
+        }
+
+        return response()->json($submission->load('student', 'assignment'));
     }
 
-    public function update(Request $request, $id)
+    // Update a submission (student only) for a specific assignment
+    public function update(Request $request, Assignment $assignment, Submission $submission)
     {
-        $submission = Submission::findOrFail($id);
+        if ($submission->assignment_id !== $assignment->id) {
+            return response()->json(['message' => 'Submission not found in this assignment'], 404);
+        }
+
+        if ($submission->student_id !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
         $validated = $request->validate([
-            'assignment_id' => 'sometimes|required|exists:assignments,id',
-            'student_id' => 'sometimes|required|exists:users,id',
-            'content' => 'nullable|string',
-            'submitted_at' => 'nullable|date',
+            'content' => 'required|string',
         ]);
 
         $submission->update($validated);
 
-        // Return updated submission with nested relations
-        return response()->json($submission->load(['assignment', 'student']));
+        return response()->json($submission->load('student'));
     }
 
-    public function destroy($id)
+    // Delete a submission (student only) for a specific assignment
+    public function destroy(Assignment $assignment, Submission $submission)
     {
-        $submission = Submission::findOrFail($id);
+        if ($submission->assignment_id !== $assignment->id) {
+            return response()->json(['message' => 'Submission not found in this assignment'], 404);
+        }
+
+        if ($submission->student_id !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $submission->delete();
 
         return response()->json(['message' => 'Submission deleted successfully']);

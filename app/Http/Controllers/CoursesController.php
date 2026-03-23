@@ -4,54 +4,65 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Course;
+use Illuminate\Support\Facades\Auth;
 
 class CoursesController extends Controller
 {
+    // List all courses with assignments, progress, and instructor
     public function index()
     {
-        // List all courses with nested assignments and progress
-        return response()->json(Course::with(['assignments', 'progress', 'instructor'])->get());
+        return response()->json(
+            Course::with(['assignments', 'progress', 'instructor'])->get()
+        );
     }
 
+    // Store a new course (instructor is the authenticated user)
     public function store(Request $request)
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'instructor_id' => 'required|exists:users,id'
         ]);
+
+        // Automatically assign the logged-in user as instructor
+        $validated['instructor_id'] = Auth::id();
 
         $course = Course::create($validated);
 
-        // Return created course with nested relations
         return response()->json($course->load(['assignments', 'progress', 'instructor']), 201);
     }
 
-    public function show($id)
+    // Show a single course with nested relations
+    public function show(Course $course)
     {
-        // Show single course with nested assignments and progress
-        return response()->json(Course::with(['assignments', 'progress', 'instructor'])->findOrFail($id));
+        return response()->json($course->load(['assignments', 'progress', 'instructor']));
     }
 
-    public function update(Request $request, $id)
+    // Update a course (only the instructor can update)
+    public function update(Request $request, Course $course)
     {
-        $course = Course::findOrFail($id);
+        // Optional: check if the authenticated user is the instructor
+        if ($course->instructor_id !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
         $validated = $request->validate([
             'title' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string',
-            'instructor_id' => 'sometimes|required|exists:users,id'
         ]);
 
         $course->update($validated);
 
-        // Return updated course with nested relations
         return response()->json($course->load(['assignments', 'progress', 'instructor']));
     }
 
-    public function destroy($id)
+    // Delete a course (only the instructor can delete)
+    public function destroy(Course $course)
     {
-        $course = Course::findOrFail($id);
+        if ($course->instructor_id !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $course->delete();
 
         return response()->json(['message' => 'Course deleted successfully']);

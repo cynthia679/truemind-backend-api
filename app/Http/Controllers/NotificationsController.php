@@ -4,58 +4,41 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Notification;
+use Illuminate\Support\Facades\Auth;
 
 class NotificationsController extends Controller
 {
+    // List all notifications for the authenticated user
     public function index()
     {
-        // List all notifications with nested user
-        return response()->json(Notification::with('user')->get());
+        return response()->json(
+            Notification::where('user_id', Auth::id())->get()
+        );
     }
 
-    public function store(Request $request)
+    // Show a single notification (only if it belongs to the user)
+    public function show(Notification $notification)
     {
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'type' => 'required|string|max:50',
-            'message' => 'required|string',
-            'read' => 'sometimes|boolean'
-        ]);
+        if ($notification->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
-        $notification = Notification::create($validated);
-
-        // Return notification with nested user
-        return response()->json($notification->load('user'), 201);
+        return response()->json($notification);
     }
 
-    public function show($id)
+    // Update a notification (e.g., mark as read)
+    public function update(Request $request, Notification $notification)
     {
-        // Show single notification with nested user
-        return response()->json(Notification::with('user')->findOrFail($id));
-    }
-
-    public function update(Request $request, $id)
-    {
-        $notification = Notification::findOrFail($id);
+        if ($notification->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
         $validated = $request->validate([
-            'user_id' => 'sometimes|required|exists:users,id',
-            'type' => 'sometimes|required|string|max:50',
-            'message' => 'sometimes|required|string',
-            'read' => 'sometimes|boolean'
+            'read' => 'required|boolean',
         ]);
 
         $notification->update($validated);
 
-        // Return updated notification with nested user
-        return response()->json($notification->load('user'));
-    }
-
-    public function destroy($id)
-    {
-        $notification = Notification::findOrFail($id);
-        $notification->delete();
-
-        return response()->json(['message' => 'Notification deleted successfully']);
+        return response()->json($notification);
     }
 }

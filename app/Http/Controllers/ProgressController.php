@@ -4,56 +4,48 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Progress;
+use Illuminate\Support\Facades\Auth;
 
 class ProgressController extends Controller
 {
+    // List all progress records for the logged-in student
     public function index()
     {
-        // List all progress with nested course and student
-        return response()->json(Progress::with(['course', 'student'])->get());
+        $studentId = Auth::id();
+        $progress = Progress::where('student_id', $studentId)->get();
+
+        return response()->json($progress);
     }
 
-    public function store(Request $request)
+    // Show progress for a specific course
+    public function showByCourse($courseId)
     {
+        $studentId = Auth::id();
+
+        $progress = Progress::where('student_id', $studentId)
+                            ->where('course_id', $courseId)
+                            ->firstOrFail();
+
+        return response()->json($progress);
+    }
+
+    // Update progress for a specific course
+    public function updateByCourse(Request $request, $courseId)
+    {
+        $studentId = Auth::id();
+
+        $progress = Progress::where('student_id', $studentId)
+                            ->where('course_id', $courseId)
+                            ->firstOrFail();
+
         $validated = $request->validate([
-            'course_id' => 'required|exists:courses,id',
-            'student_id' => 'required|exists:users,id',
-            'completion_percentage' => 'required|numeric|min:0|max:100'
-        ]);
-
-        $progress = Progress::create($validated);
-
-        // Return progress with nested relations
-        return response()->json($progress->load(['course', 'student']), 201);
-    }
-
-    public function show($id)
-    {
-        // Show single progress with nested course and student
-        return response()->json(Progress::with(['course', 'student'])->findOrFail($id));
-    }
-
-    public function update(Request $request, $id)
-    {
-        $progress = Progress::findOrFail($id);
-
-        $validated = $request->validate([
-            'course_id' => 'sometimes|required|exists:courses,id',
-            'student_id' => 'sometimes|required|exists:users,id',
-            'completion_percentage' => 'sometimes|required|numeric|min:0|max:100'
+            'completion_percentage' => 'nullable|numeric|min:0|max:100',
+            'score' => 'nullable|numeric|min:0|max:100',
+            // add any other progress fields
         ]);
 
         $progress->update($validated);
 
-        // Return updated progress with nested relations
-        return response()->json($progress->load(['course', 'student']));
-    }
-
-    public function destroy($id)
-    {
-        $progress = Progress::findOrFail($id);
-        $progress->delete();
-
-        return response()->json(['message' => 'Progress deleted successfully']);
+        return response()->json($progress);
     }
 }
