@@ -1,239 +1,172 @@
+Truemind Backend API
+Overview
 
-# truemind-backend-api
-Backend API for Truemind Innovations e-learning platform. Handles user authentication, courses, assignments, progress tracking, and notifications
-=======
-# Truemind Backend API
-
-## Overview
 This API handles user authentication, courses, assignments, submissions, progress tracking, and notifications for the Truemind platform.
 
-## Quick Reference Table
+Base URL
 
-| Module         | Endpoint              | Method | Body Example / Notes                                                            | Description                         |
-| -------------- | -------------------  | ------ | ----------------------------------------------------------------------------- | ----------------------------------- |
-| Authentication | `/register`          | POST   | `{ "name": "...", "email": "...", "password": "...", "password_confirmation": "..." }` | Register a new user                 |
-| Authentication | `/login`             | POST   | `{ "email": "...", "password": "..." }`                                       | Login user & get token              |
-| Courses        | `/courses`           | GET    | —                                                                             | Get all courses                     |
-| Courses        | `/courses`           | POST   | `{ "name": "...", "description": "..." }`                                     | Create a new course                 |
-| Courses        | `/courses/{id}`      | PUT    | `{ "name": "...", "description": "..." }`                                     | Update course                       |
-| Courses        | `/courses/{id}`      | DELETE | —                                                                             | Delete course                       |
-| Assignments    | `/assignments`       | GET    | —                                                                             | Get all assignments                 |
-| Assignments    | `/assignments`       | POST   | `{ "title": "...", "instructions": "...", "course_id": 4, "due_date": "YYYY-MM-DD" }` | Create a new assignment             |
-| Assignments    | `/assignments/{id}`  | PUT    | `{ "title": "...", "instructions": "..." }`                                   | Update assignment (optional fields) |
-| Assignments    | `/assignments/{id}`  | DELETE | —                                                                             | Delete assignment                   |
-| Submissions    | `/submissions`       | POST   | `{ "assignment_id": 2, "student_id": 7, "content": "...", "submitted_at": "YYYY-MM-DD HH:MM:SS" }` | Submit assignment                   |
-| Submissions    | `/submissions/{id}`  | PUT    | `{ "content": "Updated content" }`                                           | Update submission                   |
-| Submissions    | `/submissions/{id}`  | DELETE | —                                                                             | Delete submission                   |
-| Progress       | `/progress`          | POST   | `{ "course_id": 4, "student_id": 7, "completion_percentage": 50 }`           | Create or update progress           |
-| Progress       | `/progress`          | GET    | —                                                                             | Get all progress records            |
-| Notifications  | `/notifications`     | POST   | `{ "user_id": 7, "type": "info", "message": "...", "read": false }`          | Create notification                 |
-| Notifications  | `/notifications/{id}`| PUT    | `{ "read": true }`                                                           | Mark notification as read           |
-| Notifications  | `/notifications/{id}`| DELETE | —                                                                             | Delete notification                 |
----
+Use your backend server’s base URL for API requests:
+http://localhost:8000/api
 
-## Detailed Documentation
+| Module         | Endpoint                | Method | Body Example / Notes                                                                               | Description                        |
+| -------------- | ----------------------- | ------ | -------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| Authentication | `/register`             | POST   | `{ "name": "...", "email": "...", "password": "...", "password_confirmation": "..." }`             | Register a new user                |
+| Authentication | `/login`                | POST   | `{ "email": "...", "password": "..." }`                                                            | Login user & get token             |
+| Courses        | `/courses`              | GET    | —                                                                                                  | Get all courses                    |
+| Courses        | `/courses`              | POST   | `{ "name": "...", "description": "..." }`                                                          | Create a new course                |
+| Courses        | `/courses/{id}`         | PUT    | `{ "name": "...", "description": "..." }`                                                          | Update course                      |
+| Courses        | `/courses/{id}`         | DELETE | —                                                                                                  | Delete course                      |
+| Assignments    | `/assignments`          | GET    | —                                                                                                  | Get all assignments                |
+| Assignments    | `/assignments`          | POST   | `{ "title": "...", "instructions": "...", "course_id": 4, "due_date": "YYYY-MM-DD" }`              | Create a new assignment            |
+| Assignments    | `/assignments/{id}`     | PUT    | `{ "title": "...", "instructions": "..." }`                                                        | Update assignment                  |
+| Assignments    | `/assignments/{id}`     | DELETE | —                                                                                                  | Delete assignment                  |
+| Submissions    | `/submissions`          | POST   | `{ "assignment_id": 2, "student_id": 7, "content": "...", "submitted_at": "YYYY-MM-DD HH:MM:SS" }` | Submit assignment                  |
+| Submissions    | `/submissions/{id}`     | PUT    | `{ "content": "Updated content" }`                                                                 | Update submission                  |
+| Submissions    | `/submissions/{id}`     | DELETE | —                                                                                                  | Delete submission                  |
+| Progress       | `/progress`             | POST   | `{ "course_id": 4, "student_id": 7, "completion_percentage": 50 }`                                 | Create or update progress          |
+| Progress       | `/progress`             | GET    | —                                                                                                  | Get all progress records           |
+| Progress       | `/progress/course/{id}` | GET    | —                                                                                                  | Get progress for a specific course |
+| Progress       | `/progress/course/{id}` | PUT    | `{ "completion_percentage": 75 }`                                                                  | Update progress for a course       |
+| Notifications  | `/notifications`        | POST   | `{ "user_id": 7, "type": "info", "message": "...", "read": false }`                                | Create notification                |
+| Notifications  | `/notifications/{id}`   | PUT    | `{ "read": true }`                                                                                 | Mark notification as read          |
+| Notifications  | `/notifications/{id}`   | DELETE | —                                                                                                  | Delete notification                |
 
-### Authentication
+Detailed Documentation
+Authentication
 
-**Register User**
-- **Endpoint:** `/register`
-- **Method:** POST
-- **Body Example:**
-```json
+Register User
+
+POST /register
 {
-  "name": "Cynthia",
-  "email": "cynthia@test.com",
-  "password": "password123",
-  "password_confirmation": "password123"
+"name": "Cynthia",
+"email": "cynthia@test.com",
+"password": "password123",
+"password_confirmation": "password123"
 }
-Description: Registers a new user and returns an API token.
 
 Login User
 
-Endpoint: /login
-Method: POST
-Body Example:
+POST /login
 {
-  "email": "cynthia@test.com",
-  "password": "password123"
+"email": "cynthia@test.com",
+"password": "password123"
 }
-Description: Logs in a user and returns an API token.
 Courses
 
 Get All Courses
 
-Endpoint: /courses
-Method: GET
-Body: —
-Description: Retrieves all courses.
+GET /courses
 
 Create Course
 
-Endpoint: /courses
-Method: POST
-Body Example:
+POST /courses
 {
-  "name": "Web Development",
-  "description": "Learn HTML, CSS, JS and Laravel"
+"title": "Web Development",
+"description": "Learn HTML, CSS, JS, and Laravel"
 }
-Description: Creates a new course.
 
 Update Course
 
-Endpoint: /courses/{id}
-Method: PUT
-Body Example:
+PUT /courses/{id}
 {
-  "name": "Updated Course Name",
-  "description": "Updated description"
+"title": "Updated Course Name",
+"description": "Updated description"
 }
-Description: Updates course details (fields optional).
 
 Delete Course
 
-Endpoint: /courses/{id}
-Method: DELETE
-Body: —
-Description: Deletes a course.
+DELETE /courses/{id}
 Assignments
 
-Get All Assignments
+Get All Assignments for a Course
 
-Endpoint: /assignments
-Method: GET
-Body: —
-Description: Retrieves all assignments.
+GET /courses/{course_id}/assignments
 
 Create Assignment
 
-Endpoint: /assignments
-Method: POST
-Body Example:
+POST /courses/{course_id}/assignments
 {
-  "title": "Build API Endpoints",
-  "instructions": "Create CRUD endpoints for courses and assignments",
-  "course_id": 4,
-  "due_date": "2026-04-01"
+"title": "Build API Endpoints",
+"instructions": "Create CRUD endpoints for courses and assignments",
+"due_date": "2026-04-01"
 }
-Description: Creates a new assignment.
 
 Update Assignment
 
-Endpoint: /assignments/{id}
-Method: PUT
-Body Example:
+PUT /courses/{course_id}/assignments/{id}
 {
-  "title": "Updated Title",
-  "instructions": "Updated instructions"
+"title": "Updated Title",
+"instructions": "Updated instructions"
 }
-Description: Updates an assignment (fields optional).
 
 Delete Assignment
 
-Endpoint: /assignments/{id}
-Method: DELETE
-Body: —
-Description: Deletes an assignment.
+DELETE /courses/{course_id}/assignments/{id}
 Submissions
 
 Submit Assignment
 
-Endpoint: /submissions
-Method: POST
-Body Example:
+POST /assignments/{assignment_id}/submissions
 {
-  "assignment_id": 2,
-  "student_id": 7,
-  "content": "Here is my submission",
-  "submitted_at": "2026-03-23 12:00:00"
+"content": "Here is my submission"
 }
-Description: Submits an assignment.
 
 Update Submission
 
-Endpoint: /submissions/{id}
-Method: PUT
-Body Example:
+PUT /assignments/{assignment_id}/submissions/{id}
 {
-  "content": "Updated submission content"
+"content": "Updated submission content"
 }
-Description: Updates an existing submission.
 
 Delete Submission
 
-Endpoint: /submissions/{id}
-Method: DELETE
-Body: —
-Description: Deletes a submission.
-Progress Tracking
+DELETE /assignments/{assignment_id}/submissions/{id}
+Progress
 
-Create or Update Progress
+Get All Progress
 
-Endpoint: /progress
-Method: POST
-Body Example:
+GET /progress
+
+Get Progress for a Course
+
+GET /progress/course/{course_id}
+
+Update Progress
+
+PUT /progress/course/{course_id}
 {
-  "course_id": 4,
-  "student_id": 7,
-  "completion_percentage": 50
+"completion_percentage": 50
 }
-Description: Tracks student course progress.
-
-Get Progress Records
-
-Endpoint: /progress
-Method: GET
-Body: —
-Description: Retrieves all course progress records.
 Notifications
 
-Create Notification
+Get All Notifications
 
-Endpoint: /notifications
-Method: POST
-Body Example:
-{
-  "user_id": 7,
-  "type": "info",
-  "message": "Assignment graded",
-  "read": false
-}
-Description: Creates a notification for a user.
+GET /notifications
 
 Mark Notification as Read
 
-Endpoint: /notifications/{id}
-Method: PUT
-Body Example:
+PUT /notifications/{id}
 {
-  "read": true
+"read": true
 }
-Description: Marks a notification as read.
 
 Delete Notification
 
-Endpoint: /notifications/{id}
-Method: DELETE
-Body: —
-Description: Deletes a notification.
+DELETE /notifications/{id}
+
 Frontend Integration Notes
-Base URL: Share the backend base URL with your frontend team, e.g.,
-https://truemind-backend.example.com/api
-
 Authentication:
-
 Frontend should first call /register or /login.
-Save the returned API token and attach it to all authenticated requests using headers:
+
+Save the returned API token and attach it to all authenticated requests:
+
 Authorization: Bearer <token>
-
-Calling APIs:
-
-Example using fetch (JavaScript):
-fetch('https://truemind-backend.example.com/api/courses', {
-  headers: {
-    'Authorization': 'Bearer ' + token,
-    'Content-Type': 'application/json'
-  }
+Calling APIs Example (JavaScript):
+fetch('http://localhost:8000/api/courses', {
+headers: {
+'Authorization': 'Bearer ' + token,
+'Content-Type': 'application/json'
+}
 })
 .then(res => res.json())
 .then(data => console.log(data));
@@ -246,7 +179,5 @@ API returns standard HTTP status codes:
 400 → Bad request
 401 → Unauthorized
 404 → Not found
-Frontend should handle these codes to display proper messages.
 Testing:
-Frontend team can use tools like Postman or Insomnia to test endpoints before integrating them in the UI.
->>>>>>> a88df7b (Initial commit - complete Truemind backend API)
+Frontend team can use Postman or Insomnia to test endpoints before integrating them in the UI.
